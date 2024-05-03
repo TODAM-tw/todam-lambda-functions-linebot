@@ -23,68 +23,24 @@ CHANNEL_SECRET = os.getenv("CHANNEL_SECRET")
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(channel_secret=CHANNEL_SECRET)
 
-aws_access_key_id = os.environ["AWS_CLIENT_ACCESS_KEY_ID"]
-aws_secret_access_key = os.environ["AWS_CLIENT_SECRET_ACCESS_KEY"]
-aws_bucket_arn = os.environ["AWS_CLIENT_BUCKET_ARN"]
 aws_region_name = os.environ["AWS_CLIENT_REGION_NAME"]
 aws_bucket_name = os.environ["AWS_CLIENT_BUCKET_NAME"]
 
 s3_client = boto3.client(
     "s3",
-    aws_access_key_id = aws_access_key_id,
-    aws_secret_access_key = aws_secret_access_key,
     region_name=aws_region_name
 )
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event: MessageEvent):
-    reply_messages = []
+    """
+    Only handle the text message event, but do nothing.
 
-    with ApiClient(configuration) as api_client:
-        start_time = time.time()
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
-        # Test Model API Here
-        if event.message.text == "OUR_SCENARIO_HERE":
-            reply_messages = mock_model_api_prototype()
-
-        # Add some reserve word to trigger the specific response
-        elif event.message.text == "我想知道 AWS 的16項領導力準則":
-            reply_messages = [
-                'AWS ☁️ 的創辦故事始於 2003 年，當時亞馬遜公司的 Jeff Bezos 意識到他們在建設強大的內部基礎設施方面取得了不錯的進展！',
-                '他認識到這個基礎設施可以成為一個強大的雲端運算平台，能夠為其他企業提供服務。於是在 2006 年，AWS ☁️ 正式推出，開始提供雲端服務。',
-                'AWS ☁️ 的成功與其開放性、靈活性和不斷創新的企業文化有關。',
-                '這一切都源於 Jeff Bezos 對技術和未來的敏銳洞察力✨，他能看到潛在的機會並推動公司朝著新的方向發展。',
-            ]
-        elif event.message.text == "我想知道 AWS 創辦故事":
-            reply_messages = [
-                f'AWS ☁️ 的創辦故事始於 2003 年，當時亞馬遜公司的 Jeff Bezos 意識到他們在建設強大的內部基礎設施方面取得了不錯的進展！',
-                f'他認識到這個基礎設施可以成為一個強大的雲端運算平台，能夠為其他企業提供服務。於是在 2006 年，AWS ☁️ 正式推出，開始提供雲端服務。',
-                f'AWS ☁️ 的成功與其開放性、靈活性和不斷創新的企業文化有關。',
-                f'這一切都源於 Jeff Bezos 對技術和未來的敏銳洞察力✨，他能看到潛在的機會並推動公司朝著新的方向發展。',
-            ]
-        
-        # 
-        else:
-            reply_messages = [
-                "DAMMMM 蟹 Bro, M3 換一句試試吧！",
-                "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
-                f"Time elapsed: {time.time() - start_time} seconds."
-            ]
-
-        reply_messages = [TextMessage(text=message) for message in reply_messages]
-
-        line_bot_api.reply_message_with_http_info(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=reply_messages,
-            )
-        )
+    In the future, we may add the model to check the message
+    explicitly or not, and then suggest the user to resend the message.
+    """
+    ...
+    return
 
 @handler.add(MessageEvent, message=StickerMessageContent)
 def handle_sticker_message(event: MessageEvent):
@@ -205,19 +161,10 @@ def store_img_to_s3(
 def store_user_log(body: str) -> None:
     current_time = datetime.now().strftime("%Y-%m-%d-%H-%M-%S-%f")
 
-    s3_goal_file_path = f"logs/{current_time}.log"
+    s3_goal_file_path = f"{current_time}.log"
     lambda_tmp_file_file = "/tmp/events.log"
 
     with open(lambda_tmp_file_file, "a", encoding="utf-8") as f:
         f.write(f"{body}\n")
     s3_client.upload_file(lambda_tmp_file_file, aws_bucket_name, s3_goal_file_path)
     os.remove(lambda_tmp_file_file)
-
-
-@staticmethod
-def mock_model_api_prototype() -> list[str]:
-    """
-    This is the prototype of calling the model API.
-    Change this function to your model API.
-    """
-    return ["Hi", "HiHi", "HiHi"]
