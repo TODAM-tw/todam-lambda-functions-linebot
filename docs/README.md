@@ -1,9 +1,25 @@
-# ToDAM Line Bot with Lambda Functions
+# ToDAM Line Bot with Lambda Functions <!-- omit in toc -->
 
 Develop a Line bot using AWS Lambda Functions and `linebot.v3` library, utilizing `Python 3.12` runtime. 
 
 > [!IMPORTANT]
 > Note that `Python 3.12` operates on an **Amazon Linux 2023 Amazon Machine Image (AMI)**. Hence, ensure the creation of the layer on an **Amazon Linux 2023 OS**. [^3]
+
+**Table of Contents**
+- [Create `Lambda Function` Layer](#create-lambda-function-layer)
+  - [Create `line-bot-sdk` Layer \[^3\]](#create-line-bot-sdk-layer-3)
+  - [Create `dotenv` Layer \[^3\]](#create-dotenv-layer-3)
+- [Add Permission with s3 \[^2\]](#add-permission-with-s3-2)
+- [Project Structure](#project-structure)
+- [Functions and Features](#functions-and-features)
+  - [Import Libraries](#import-libraries)
+  - [Create the `s3_client` object](#create-the-s3_client-object)
+  - [Handle the different types of messages](#handle-the-different-types-of-messages)
+    - [Text Message](#text-message)
+    - [Sticker Message](#sticker-message)
+    - [Image, Video, and Audio Messages](#image-video-and-audio-messages)
+  - [Lambda Handler](#lambda-handler)
+    - [User Log](#user-log)
 
 ## Create `Lambda Function` Layer
 
