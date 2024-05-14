@@ -71,19 +71,3 @@ If a significant portion of the source code is used, please provide a link back 
 [^2]: [Policies and Permissions in Amazon S3](https://docs.aws.amazon.com/AmazonS3/latest/userguide/access-policy-language-overview.html?icmpid=docs_amazons3_console)
 [^3]: [How do I resolve the "Unable to import module" error that I receive when I run Lambda code in Python?](https://repost.aws/knowledge-center/lambda-import-module-error-python)
 
-
-
-```mermaid
----
-title: ToDAM Log
----
-classDiagram
-    note "Author: Hugo"
-    direction LR
-    Customer "1" --> "*" Product: Purchase
-    Product "*" --> "1" UsedProduct: is recorded
-    LineUser: *userID
-    Message: *messageID
-    Message: messageContent
-    Message: messageTime
-```
