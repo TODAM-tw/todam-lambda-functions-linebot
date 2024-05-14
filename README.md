@@ -15,17 +15,18 @@ $ mkdir -p lambda-layer/python
 $ cd lambda-layer/python
 $ pip3 install --platform manylinux2014_x86_64 --target . --python-version 3.12 --only-binary=:all: line-bot-sdk
 $ cd ..
-$ zip -r layer.zip python
+$ zip -r linebot_lambda_layer.zip python
 ```
 
-### or With shell script
+### Create `dotenv` Layer [^3]
+
 ```shell
-$ ./scripts/build_layer.sh
+$ mkdir -p lambda-layer/python
+$ cd lambda-layer/python
+$ pip3 install --platform manylinux2014_x86_64 --target . --python-version 3.12 --only-binary=:all: python-dotenv
+$ cd ..
+$ zip -r dotenv_lambda_layer.zip python
 ```
-
-### or just click the link below to download the `line-bot-sdk` layer
-
-👉🏻 [Download `line-bot-sdk`](https://raw.githubusercontent.com/1chooo/aws-educate-101-line-bot/main/lambda_layers/linebot_lambda_layer.zip)
 
 ## Add Permission with s3 [^2]
 ```json
@@ -61,7 +62,7 @@ $ ./scripts/build_layer.sh
 > </aside>
 
 ## License
-Released under [MIT](./LICENSE) by [Hugo ChunHo Lin](https://github.com/1chooo).
+Released under [Apache License](./LICENSE) by [TODAM-tw](https://github.com/TODAM-tw).
 
 This software can be modified and reused without restriction.
 The original license must be included with any copies of this software.
