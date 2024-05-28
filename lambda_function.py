@@ -124,7 +124,16 @@ def store_img_to_s3(
     with open(user_uploaded_image_file_name, 'wb') as tf:
         tf.write(message_content)
 
-    s3_client.upload_file(user_uploaded_image_file_name, aws_bucket_name, s3_goal_file_path)
+    mimetype = 'image/jpeg'
+
+    s3_client.upload_file(
+        Filename=user_uploaded_image_file_name, 
+        Bucket=aws_bucket_name, 
+        Key=s3_goal_file_path, 
+        ExtraArgs={
+            "ContentType": mimetype
+        }
+    )
     os.remove(user_uploaded_image_file_name)
 
 @staticmethod
