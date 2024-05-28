@@ -2,7 +2,6 @@
 
 import json
 import os
-import time
 from datetime import datetime
 
 import boto3
@@ -32,7 +31,7 @@ s3_client = boto3.client(
 )
 
 @handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event: MessageEvent):
+def handle_message(event: MessageEvent) -> None:
     """
     Only handle the text message event, but do nothing.
 
@@ -43,34 +42,20 @@ def handle_message(event: MessageEvent):
     return
 
 @handler.add(MessageEvent, message=StickerMessageContent)
-def handle_sticker_message(event: MessageEvent):
+def handle_sticker_message(event: MessageEvent) -> None:
     if event.source.type != "user":
         return
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text="$", emojis=[{"index": 0, "productId": "5ac21c46040ab15980c9b442", "emojiId": "138"}])]
-            )
-        )
+    return
 
 @handler.add(MessageEvent, message=(ImageMessageContent,
                                     VideoMessageContent,
                                     AudioMessageContent))
-def handle_content_message(event: MessageEvent):
+def handle_content_message(event: MessageEvent) -> None:
     """
     The timeout for Lambda Functions here is only 3 seconds, 
     which is insufficient for uploading files to S3. 
     Please increase the timeout to 10 seconds or possibly more.
     """
-    start_time = time.time()
     if isinstance(event.message, ImageMessageContent):
         ext = 'jpg'
     elif isinstance(event.message, VideoMessageContent):
@@ -81,29 +66,15 @@ def handle_content_message(event: MessageEvent):
         return
 
     with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
         line_bot_blob_api = MessagingApiBlob(api_client)
 
         store_img_to_s3(event, ext, line_bot_blob_api)
 
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[
-                    TextMessage(text="Save content."),
-                    TextMessage(text=f"Time elapsed: {time.time() - start_time} seconds.")
-                ]
-            )
-        )
+    return
 
 @staticmethod
-def lambda_handler(event, context):
+def lambda_handler(
+    event: dict, context: dict) -> dict:
     try: 
         body = event["body"]
         signature = event["headers"]["x-line-signature"]
@@ -154,7 +125,16 @@ def store_img_to_s3(
     with open(user_uploaded_image_file_name, 'wb') as tf:
         tf.write(message_content)
 
-    s3_client.upload_file(user_uploaded_image_file_name, aws_bucket_name, s3_goal_file_path)
+    mimetype = 'image/jpeg'
+
+    s3_client.upload_file(
+        Filename=user_uploaded_image_file_name, 
+        Bucket=aws_bucket_name, 
+        Key=s3_goal_file_path, 
+        ExtraArgs={
+            "ContentType": mimetype
+        }
+    )
     os.remove(user_uploaded_image_file_name)
 
 @staticmethod

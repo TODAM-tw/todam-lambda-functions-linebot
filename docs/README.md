@@ -3,12 +3,12 @@
 Develop a Line bot using AWS Lambda Functions and `linebot.v3` library, utilizing `Python 3.12` runtime. 
 
 > [!IMPORTANT]
-> Note that `Python 3.12` operates on an **Amazon Linux 2023 Amazon Machine Image (AMI)**. Hence, ensure the creation of the layer on an **Amazon Linux 2023 OS**. [^3]
+> Note that `Python 3.12` operates on an **Amazon Linux 2023 Amazon Machine Image (AMI)**. Hence, ensure the creation of the layer on an **Amazon Linux 2023 OS**. [^1], [^3]
 
 **Table of Contents**
 - [Create `Lambda Function` Layer](#create-lambda-function-layer)
-  - [Create `line-bot-sdk` Layer \[^3\]](#create-line-bot-sdk-layer-3)
-  - [Create `dotenv` Layer \[^3\]](#create-dotenv-layer-3)
+  - [Create `line-bot-sdk` Layer](#create-line-bot-sdk-layer)
+  - [Create `dotenv` Layer](#create-dotenv-layer)
 - [Add Permission with s3 \[^2\]](#add-permission-with-s3-2)
 - [Project Structure](#project-structure)
 - [Functions and Features](#functions-and-features)
@@ -23,7 +23,7 @@ Develop a Line bot using AWS Lambda Functions and `linebot.v3` library, utilizin
 
 ## Create `Lambda Function` Layer
 
-### Create `line-bot-sdk` Layer [^3]
+### Create `line-bot-sdk` Layer
 
 ```shell
 $ mkdir -p lambda-layer/python
@@ -33,7 +33,7 @@ $ cd ..
 $ zip -r linebot_lambda_layer.zip python
 ```
 
-### Create `dotenv` Layer [^3]
+### Create `dotenv` Layer
 
 ```shell
 $ mkdir -p lambda-layer/python
@@ -128,7 +128,7 @@ Handle the different types of messages, including text, sticker, image, video, a
 
 ```python
 @handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event: MessageEvent):
+def handle_message(event: MessageEvent) -> None:
     """
     Only handle the text message event, but do nothing.
 
@@ -169,41 +169,31 @@ def handle_message(event: MessageEvent):
 
 #### Sticker Message
 
+We temporarily do nothing when the user sends a sticker message.
+
 ```python
 @handler.add(MessageEvent, message=StickerMessageContent)
-def handle_sticker_message(event: MessageEvent):
+def handle_sticker_message(event: MessageEvent) -> None:
     if event.source.type != "user":
         return
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text="$", emojis=[{"index": 0, "productId": "5ac21c46040ab15980c9b442", "emojiId": "138"}])]  # We can change the different sticker here
-            )
-        )
+    return
 ```
 
 
 #### Image, Video, and Audio Messages
 
+We store the user uploaded image, video, or audio to the S3 bucket. And We don't need to reply to the user anymore.
+
 ```python
 @handler.add(MessageEvent, message=(ImageMessageContent,
                                     VideoMessageContent,
                                     AudioMessageContent))
-def handle_content_message(event: MessageEvent):
+def handle_content_message(event: MessageEvent) -> None:
     """
     The timeout for Lambda Functions here is only 3 seconds, 
     which is insufficient for uploading files to S3. 
     Please increase the timeout to 10 seconds or possibly more.
     """
-    start_time = time.time()
     if isinstance(event.message, ImageMessageContent):
         ext = 'jpg'
     elif isinstance(event.message, VideoMessageContent):
@@ -214,26 +204,11 @@ def handle_content_message(event: MessageEvent):
         return
 
     with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
         line_bot_blob_api = MessagingApiBlob(api_client)
 
         store_img_to_s3(event, ext, line_bot_blob_api)
 
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[
-                    TextMessage(text="Save content."),
-                    TextMessage(text=f"Time elapsed: {time.time() - start_time} seconds.")
-                ]
-            )
-        )
+    return
 ```
 
 Store the user uploaded image, video, or audio to the S3 bucket.
@@ -264,10 +239,23 @@ def store_img_to_s3(
     with open(user_uploaded_image_file_name, 'wb') as tf:
         tf.write(message_content)
 
-    s3_client.upload_file(user_uploaded_image_file_name, aws_bucket_name, s3_goal_file_path)
+    mimetype = 'image/jpeg'
+
+    s3_client.upload_file(
+        Filename=user_uploaded_image_file_name, 
+        Bucket=aws_bucket_name, 
+        Key=s3_goal_file_path, 
+        ExtraArgs={
+            "ContentType": mimetype
+        }
+    )
     os.remove(user_uploaded_image_file_name)
 ```
 
+> [!NOTE]
+> If we have stored the image content to the s3 bucket, and we need to display the image on the web browser directly, we can add the `ContentType` to the `ExtraArgs` parameter. And let the `ContentType` be the same as the image type.
+
+    
 
 ### Lambda Handler
 
@@ -275,7 +263,8 @@ Handle the webhook event and store the user log to the S3 bucket.
 
 ```python
 @staticmethod
-def lambda_handler(event, context):
+def lambda_handler(
+    event: dict, context: dict) -> dict:
     try: 
         body = event["body"]
         signature = event["headers"]["x-line-signature"]
