@@ -42,7 +42,7 @@ def handle_message(event: MessageEvent) -> None:
     return
 
 @handler.add(MessageEvent, message=StickerMessageContent)
-def handle_sticker_message(event: MessageEvent):
+def handle_sticker_message(event: MessageEvent) -> None:
     if event.source.type != "user":
         return
     return
