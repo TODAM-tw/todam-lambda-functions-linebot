@@ -2,7 +2,6 @@
 
 import json
 import os
-import time
 from datetime import datetime
 
 import boto3
@@ -46,20 +45,7 @@ def handle_message(event: MessageEvent):
 def handle_sticker_message(event: MessageEvent):
     if event.source.type != "user":
         return
-    with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text="$", emojis=[{"index": 0, "productId": "5ac21c46040ab15980c9b442", "emojiId": "138"}])]
-            )
-        )
+    return
 
 @handler.add(MessageEvent, message=(ImageMessageContent,
                                     VideoMessageContent,
@@ -70,7 +56,6 @@ def handle_content_message(event: MessageEvent):
     which is insufficient for uploading files to S3. 
     Please increase the timeout to 10 seconds or possibly more.
     """
-    start_time = time.time()
     if isinstance(event.message, ImageMessageContent):
         ext = 'jpg'
     elif isinstance(event.message, VideoMessageContent):
@@ -81,26 +66,11 @@ def handle_content_message(event: MessageEvent):
         return
 
     with ApiClient(configuration) as api_client:
-        line_bot_api = MessagingApi(api_client)
-        line_bot_api.show_loading_animation(
-            ShowLoadingAnimationRequest(
-                chat_id=event.source.user_id,
-            )
-        )
-
         line_bot_blob_api = MessagingApiBlob(api_client)
 
         store_img_to_s3(event, ext, line_bot_blob_api)
 
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[
-                    TextMessage(text="Save content."),
-                    TextMessage(text=f"Time elapsed: {time.time() - start_time} seconds.")
-                ]
-            )
-        )
+    return
 
 @staticmethod
 def lambda_handler(event, context):
