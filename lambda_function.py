@@ -31,7 +31,7 @@ s3_client = boto3.client(
 )
 
 @handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event: MessageEvent):
+def handle_message(event: MessageEvent) -> None:
     """
     Only handle the text message event, but do nothing.
 
@@ -50,7 +50,7 @@ def handle_sticker_message(event: MessageEvent):
 @handler.add(MessageEvent, message=(ImageMessageContent,
                                     VideoMessageContent,
                                     AudioMessageContent))
-def handle_content_message(event: MessageEvent):
+def handle_content_message(event: MessageEvent) -> None:
     """
     The timeout for Lambda Functions here is only 3 seconds, 
     which is insufficient for uploading files to S3. 
@@ -73,7 +73,8 @@ def handle_content_message(event: MessageEvent):
     return
 
 @staticmethod
-def lambda_handler(event, context):
+def lambda_handler(
+    event: dict, context: dict) -> dict:
     try: 
         body = event["body"]
         signature = event["headers"]["x-line-signature"]
